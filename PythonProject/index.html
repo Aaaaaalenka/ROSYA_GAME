@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>День из жизни Росеньки</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; background: #2c1810; font-family: 'Courier New', monospace; overflow: hidden; user-select: none; }
+        #game-container { width: 100vw; height: 100vh; position: relative; background: #2c1810; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        #scene-wrapper { position: relative; max-width: 95vw; max-height: 82vh; background: #2c1810; display: flex; align-items: center; justify-content: center; border: 4px solid #1a0e08; box-shadow: 0 0 60px rgba(0, 0, 0, 0.8); overflow: hidden; }
+        #scene-image { display: block; max-width: 100%; max-height: 82vh; width: auto; height: auto; image-rendering: pixelated; background: #2c1810; }
+
+        .sprite { position: absolute; image-rendering: pixelated; pointer-events: none; z-index: 5; background: transparent !important; display: none; }
+        .sprite img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; background: transparent !important; }
+
+        #player { position: absolute; width: 120px; height: 120px; image-rendering: pixelated; pointer-events: none; z-index: 10; display: none; background: transparent !important; }
+        #player img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; background: transparent !important; }
+        #player.sleep-mode { width: 180px; height: 180px; }
+
+        #top-label { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: rgba(10, 6, 4, 0.85); color: #c8b8a8; font-family: 'Courier New', monospace; font-size: 14px; padding: 4px 16px; border: 2px solid #5a3f2b; text-shadow: 2px 2px 0 #0a0604; text-align: center; z-index: 25; white-space: nowrap; letter-spacing: 1px; text-transform: uppercase; image-rendering: pixelated; }
+        #interact-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 6, 4, 0.92); border: 3px solid #7a9a7a; padding: 8px 18px; color: #b8d8b0; font-family: 'Courier New', monospace; font-size: 14px; text-shadow: 2px 2px 0 #0a1a0a; box-shadow: 6px 6px 0 #000000; z-index: 30; display: none; text-align: center; image-rendering: pixelated; letter-spacing: 1px; text-transform: uppercase; }
+
+        #dialog-box { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); background: #0a0a0a; border: 4px solid #5a7a5a; padding: 10px 18px; min-width: 180px; max-width: 80%; min-height: 44px; color: #b8d8b0; font-family: 'Courier New', monospace; font-size: 14px; text-shadow: 2px 2px 0 #0a1a0a; box-shadow: 8px 8px 0 #000000; z-index: 30; display: none; text-align: center; line-height: 1.5; word-wrap: break-word; image-rendering: pixelated; }
+        #dialog-box .speaker { color: #8ab87a; font-weight: bold; display: block; margin-bottom: 2px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        #dialog-box .text { color: #c8e8c0; }
+
+        #actions-container { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 12px 6px 12px; z-index: 15; pointer-events: none; }
+        #actions-container .action-btn { pointer-events: auto; background: #1a0e08; color: #c8b8a8; border: 3px solid #5a3f2b; padding: 6px 14px; font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; box-shadow: 4px 4px 0 #0a0604; transition: all 0.05s linear; text-shadow: 2px 2px 0 #0a0604; text-align: center; border-radius: 0 !important; }
+        #actions-container .action-btn:hover { background: #3a281c; border-color: #7a5f3f; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #0a0604; }
+
+        #controls-hint { position: absolute; bottom: 100px; right: 16px; color: #5a4a3a; font-size: 11px; font-family: 'Courier New', monospace; background: rgba(10, 6, 4, 0.7); padding: 4px 10px; border: 2px solid #2a1a0e; z-index: 25; text-align: right; line-height: 1.6; display: none; }
+        #controls-hint .key { display: inline-block; background: #1a0e08; border: 1px solid #3a2a1a; padding: 0 6px; min-width: 20px; text-align: center; color: #a09080; }
+
+        .minigame-wrapper {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
+            display: none; pointer-events: auto; image-rendering: pixelated;
+        }
+        .minigame-wrapper canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; background: #000000; }
+
+        .minigame-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 25;
+            display: none; background: rgba(0, 0, 0, 0.75);
+            justify-content: center; align-items: center; flex-direction: column;
+            color: #c8e8c0; font-family: 'Courier New', monospace; text-align: center; padding: 20px;
+            opacity: 1; transition: opacity 0.4s ease-in-out, visibility 0.4s ease-in-out;
+        }
+        .minigame-overlay.fade-out { opacity: 0; pointer-events: none; }
+
+        .minigame-overlay .title { font-size: 28px; text-shadow: 4px 4px 0 #0a1a0a; margin-bottom: 10px; }
+        .minigame-overlay .sub { font-size: 18px; text-shadow: 2px 2px 0 #0a1a0a; margin-bottom: 20px; max-width: 80%; }
+        .minigame-overlay .action-btn { pointer-events: auto; background: #1a0e08; color: #c8b8a8; border: 3px solid #5a3f2b; padding: 10px 30px; font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; box-shadow: 4px 4px 0 #0a0604; transition: all 0.05s linear; text-shadow: 2px 2px 0 #0a0604; border-radius: 0 !important; }
+        .minigame-overlay .action-btn:hover { background: #3a281c; border-color: #7a5f3f; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #0a0604; }
+        .minigame-overlay .action-btn.danger { border-color: #7a3a3a; color: #d4a0a0; }
+        .minigame-overlay .action-btn.success { border-color: #3a7a3a; color: #a0d4a0; }
+
+        @media (max-width: 600px) {
+            #player { width: 80px; height: 80px; }
+            #player.sleep-mode { width: 120px; height: 120px; }
+            .sprite { transform: scale(0.6); }
+            #top-label { font-size: 11px; padding: 3px 12px; white-space: normal; }
+            #dialog-box { font-size: 12px; padding: 6px 12px; min-width: 140px; bottom: 50px; }
+            #interact-label { font-size: 11px; padding: 5px 12px; }
+            #controls-hint { font-size: 9px; padding: 3px 8px; bottom: 80px; right: 8px; }
+            #actions-container .action-btn { font-size: 10px; padding: 4px 10px; }
+            .minigame-overlay .title { font-size: 20px; }
+            .minigame-overlay .sub { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="scene-wrapper">
+            <img id="scene-image" src="images/rosya_room.png" alt="Сцена">
+
+            <div class="sprite" id="sprite-alenka" style="width:180px;height:240px;left:65%;top:40%;"><img src="images/alenka.png" alt="Алёнка"></div>
+            <div class="sprite" id="sprite-aliska" style="width:180px;height:240px;left:65%;top:40%;"><img src="images/aliska.png" alt="Алиска"></div>
+            <div class="sprite" id="sprite-misha" style="width:200px;height:260px;left:35%;top:20%;"><img src="images/misha.png" alt="Миша"></div>
+
+            <div class="sprite" id="sprite-shushek" style="width:60px;height:60px;left:30%;top:38%;"><img src="images/shushek.png" alt="Шушек"></div>
+            <div class="sprite" id="sprite-shushek-angry" style="width:60px;height:60px;left:30%;top:38%;display:none;"><img src="images/shushek_angry.png" alt="Злая шиншилла"></div>
+
+            <div class="sprite" id="sprite-toy" style="width:80px;height:100px;left:72%;top:65%;display:none;align-items:center;justify-content:center;"><img src="images/bag_heart.png" alt="Сумка"></div>
+
+            <div id="player" class="sleep-mode"><img id="player-img" src="images/rosya_sleep.png" alt="Рося"></div>
+
+            <div id="top-label">РОСЯ СПИТ... &lt; НАЖМИТЕ F ЧТОБЫ РАЗБУДИТЬ &gt;</div>
+            <div id="interact-label">[F] ВЗАИМОДЕЙСТВИЕ</div>
+            <div id="dialog-box">
+                <span class="speaker" id="dialog-speaker"></span>
+                <span class="text" id="dialog-text"></span>
+            </div>
+
+            <div class="minigame-wrapper" id="minigame-canvas"></div>
+            <div class="minigame-overlay" id="minigame-overlay">
+                <div class="title" id="mg-title">МИНИ-ИГРА</div>
+                <div class="sub" id="mg-sub">...</div>
+                <button class="action-btn" id="mg-btn">ПРОДОЛЖИТЬ</button>
+            </div>
+        </div>
+
+        <div id="actions-container"></div>
+        <div id="controls-hint">
+            <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> — ДВИЖЕНИЕ<br>
+            <span class="key">F</span> — ВЗАИМОДЕЙСТВИЕ
+        </div>
+    </div>
+
+    <script>
+        const game = {
+            mode: 'sleep',
+            rosyX: 50,
+            rosyY: 50,
+            alenkaDoorOpen: false,
+            aliskaDoorOpen: false,
+            alenkaVisited: false,
+            aliskaVisited: false,
+            dialogActive: false,
+            dialogTimer: null,
+            doorStep: 0,
+            alenkaWarnedShushek: false,
+            alenkaWarnedCloset: false,
+            aliskaWarnedStairs: false,
+            aliskaWarnedFlower: false,
+            mishaTriggered: false,
+            toyShaken: false,
+            escaped: false,
+            facing: 'down',
+            mishaArrived: false,
+            currentMinigame: null,
+            shushekAnger: 0,
+            shushekAngry: false,
+            minigameActive: false
+        };
+
+        const scenes = {
+            sleep: {
+                image: 'images/rosya_room.png',
+                playerX: 50, playerY: 70,
+                movable: true, isSleep: true,
+                topLabel: 'РОСЯ СПИТ... < НАЖМИТЕ F ЧТОБЫ РАЗБУДИТЬ >',
+                sprites: [], zones: [{ x: 15, y: 55, label: 'В КОРИДОР', action: 'go_corridor' }]
+            },
+            stand: {
+                image: 'images/rosya_room.png',
+                playerX: 50, playerY: 70,
+                movable: true, isSleep: false,
+                topLabel: 'РОСЯ ПРОСНУЛАСЬ... < НАЖМИТЕ F ЧТОБЫ ПОЙТИ В КОРИДОР >',
+                sprites: [], zones: [{ x: 15, y: 55, label: 'В КОРИДОР', action: 'go_corridor' }]
+            },
+            corridor: {
+                image: 'images/koridor.png',
+                playerX: 50, playerY: 65, movable: true, isSleep: false,
+                topLabel: 'КОРИДОР', sprites: [],
+                zones: [
+                    { x: 85, y: 60, label: 'ДВЕРЬ АЛЁНКИ', action: 'alenka_door' },
+                    { x: 15, y: 60, label: 'ДВЕРЬ АЛИСКИ', action: 'aliska_door' },
+                    { x: 92, y: 82, label: 'В ХОЛЛ', action: 'go_hall' }
+                ]
+            },
+            alenka_room: {
+                image: 'images/alenka_room.png',
+                playerX: 40, playerY: 70, movable: true, isSleep: false,
+                topLabel: 'КОМНАТА АЛЁНКИ',
+                sprites: ['alenka', 'shushek', 'shushek-angry'],
+                zones: [
+                    { x: 32, y: 68, label: 'ШИНШИЛЛА', action: 'shushek_minigame' },
+                    { x: 55, y: 85, label: 'ФАНТИК', action: 'fantik_minigame' },
+                    { x: 57, y: 70, label: 'ШКАФ', action: 'closet_minigame' },
+                    { x: 65, y: 65, label: 'АЛЁНКА', action: 'alenka_pet' },
+                    { x: 5, y: 55, label: 'ВЫХОД', action: 'exit_alenka' }
+                ],
+                autoZones: []
+            },
+            aliska_room: {
+                image: 'images/aliska_room.png',
+                playerX: 40, playerY: 65, movable: true, isSleep: false,
+                topLabel: 'КОМНАТА АЛИСКИ',
+                sprites: ['aliska'],
+                zones: [
+                    { x: 68, y: 60, label: 'ДИВАН', action: 'sofa_minigame' },
+                    { x: 20, y: 45, label: 'ЛЕСТНИЦА', action: 'stairs_minigame' },
+                    { x: 8, y: 52, label: 'ЦВЕТОК', action: 'flower' },
+                    { x: 65, y: 65, label: 'АЛИСКА', action: 'aliska_pet' },
+                    { x: 5, y: 60, label: 'ВЫХОД', action: 'exit_aliska' }
+                ],
+                autoZones: [
+                    { x: 20, y: 45, range: 20, action: 'stairs_auto' },
+                    { x: 8, y: 52, range: 20, action: 'flower_auto' }
+                ]
+            },
+            hall: {
+                image: 'images/hall.png',
+                playerX: 50, playerY: 75, movable: true, isSleep: false,
+                topLabel: 'ПРИХОЖАЯ', sprites: [],
+                zones: [ { x: 75, y: 85, label: 'ИГРУШКА', action: 'toy' } ]
+            },
+            kitchen: {
+                image: 'images/rosya_room.png',
+                playerX: 50, playerY: 50, movable: false, isSleep: false,
+                topLabel: 'КУХНЯ', sprites: [], zones: []
+            }
+        };
+
+        const spriteMap = {
+            'alenka': document.getElementById('sprite-alenka'),
+            'aliska': document.getElementById('sprite-aliska'),
+            'misha': document.getElementById('sprite-misha'),
+            'shushek': document.getElementById('sprite-shushek'),
+            'shushek-angry': document.getElementById('sprite-shushek-angry'),
+            'toy': document.getElementById('sprite-toy')
+        };
+
+        const LAUNDRY_IMAGES = ['laundry_1.png', 'laundry_2.png', 'laundry_3.png', 'laundry_4.png'];
+        const FANTIK_IMAGES = ['fantik_item_1.png', 'fantik_item_2.png', 'fantik_item_3.png'];
+        const CLOSET_DANGER_IMAGES = ['glasses.png', 'bottle.png', 'beer_mug.png', 'perfume.png'];
+        const OBSTACLE_IMAGES = ['obstacle_1.png', 'obstacle_2.png', 'obstacle_3.png', 'obstacle_4.png'];
+
+        const keys = { w: false, a: false, s: false, d: false, f: false };
+
+        const sceneImg = document.getElementById('scene-image');
+        const playerEl = document.getElementById('player');
+        const playerImg = document.getElementById('player-img');
+        const topLabel = document.getElementById('top-label');
+        const interactLabel = document.getElementById('interact-label');
+        const dialogBox = document.getElementById('dialog-box');
+        const dialogSpeaker = document.getElementById('dialog-speaker');
+        const dialogText = document.getElementById('dialog-text');
+        const actionsEl = document.getElementById('actions-container');
+        const hintEl = document.getElementById('controls-hint');
+
+        const canvasContainer = document.getElementById('minigame-canvas');
+        const overlayEl = document.getElementById('minigame-overlay');
+        const mgTitle = document.getElementById('mg-title');
+        const mgSub = document.getElementById('mg-sub');
+        const mgBtn = document.getElementById('mg-btn');
+
+        function showDialog(speaker, text, duration) {
+            dialogSpeaker.textContent = speaker;
+            dialogText.textContent = text;
+            dialogBox.style.display = 'block';
+            game.dialogActive = true;
+            hintEl.style.display = 'none';
+            interactLabel.style.display = 'none';
+            if (game.dialogTimer) clearTimeout(game.dialogTimer);
+            if (duration) game.dialogTimer = setTimeout(hideDialog, duration);
+        }
+
+        function hideDialog() {
+            dialogBox.style.display = 'none';
+            game.dialogActive = false;
+            const scene = scenes[game.mode];
+            if (scene && scene.movable && !game.minigameActive) hintEl.style.display = 'block';
+        }
+
+        function showInteract(show, label) {
+            if (game.dialogActive || game.minigameActive) return;
+            interactLabel.style.display = (show && label) ? 'block' : 'none';
+            if(show && label) interactLabel.textContent = '[F] ' + label;
+        }
+
+        function setScene(name) {
+            const scene = scenes[name];
+            if (!scene) return;
+            sceneImg.src = scene.image;
+            game.mode = name;
+            topLabel.textContent = scene.topLabel || '';
+            for (const key in spriteMap) {
+                if (spriteMap[key]) spriteMap[key].style.display = 'none';
+            }
+            if (scene.sprites) {
+                for (const id of scene.sprites) {
+                    if (spriteMap[id]) spriteMap[id].style.display = 'block';
+                }
+            }
+            playerEl.classList.toggle('sleep-mode', !!scene.isSleep);
+            game.rosyX = scene.playerX || 50;
+            game.rosyY = scene.playerY || 50;
+            playerEl.style.display = 'block';
+            hintEl.style.display = scene.movable ? 'block' : 'none';
+            hideDialog();
+            showInteract(false);
+            actionsEl.innerHTML = '';
+            game.doorStep = 0;
+            hideMinigame();
+            updatePlayer();
+        }
+
+        function updatePlayer() {
+            const wrapper = document.getElementById('scene-wrapper');
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const imgRect = sceneImg.getBoundingClientRect();
+
+            const imgWidth = imgRect.width;
+            const imgHeight = imgRect.height;
+            const offsetX = imgRect.left - wrapperRect.left;
+            const offsetY = imgRect.top - wrapperRect.top;
+
+            const targetX = offsetX + (game.rosyX / 100) * imgWidth;
+            const targetY = offsetY + (game.rosyY / 100) * imgHeight;
+
+            const currentSize = game.mode === 'sleep' ? 180 : 120;
+            const halfSize = currentSize / 2;
+
+            playerEl.style.left = Math.max(0, targetX - halfSize) + 'px';
+            playerEl.style.top = Math.max(0, targetY - halfSize) + 'px';
+
+            playerImg.style.transform = game.facing === 'right' ? 'scaleX(-1)' : 'scaleX(1)';
+        }
+
+        function showMinigame(title, sub, startBtnText, startCallback) {
+            canvasContainer.style.display = 'block';
+            overlayEl.style.display = 'flex';
+            mgTitle.textContent = title;
+            mgSub.textContent = sub;
+            mgBtn.textContent = startBtnText || 'ПРОДОЛЖИТЬ';
+            mgBtn.className = 'action-btn success';
+
+            game.dialogActive = true;
+            game.minigameActive = true;
+            hintEl.style.display = 'none';
+            interactLabel.style.display = 'none';
+            topLabel.style.display = 'none';
+            canvasContainer.innerHTML = '';
+
+            mgBtn.onclick = () => {
+                mgBtn.style.display = 'none';
+                overlayEl.classList.add('fade-out');
+                setTimeout(() => {
+                    overlayEl.style.display = 'none';
+                    overlayEl.classList.remove('fade-out');
+                    if (startCallback) startCallback();
+                }, 700);
+            };
+        }
+
+        function hideMinigame() {
+            canvasContainer.style.display = 'none';
+            overlayEl.style.display = 'none';
+            canvasContainer.innerHTML = '';
+            game.dialogActive = false;
+            game.minigameActive = false;
+            game.currentMinigame = null;
+            topLabel.style.display = 'block';
+            const scene = scenes[game.mode];
+            if (scene && scene.movable) hintEl.style.display = 'block';
+        }
+
+        function showMinigameResult(title, sub, btnText, callback) {
+            mgTitle.textContent = title; mgSub.textContent = sub; mgBtn.textContent = btnText || 'ПРОДОЛЖИТЬ';
+            mgBtn.className = 'action-btn success';
+            mgBtn.style.display = 'block';
+            mgBtn.onclick = () => { hideMinigame(); if (callback) callback(); };
+            overlayEl.style.display = 'flex';
+        }
+
+        function showMinigameFail(title, sub, btnText, callback) {
+            mgTitle.textContent = title; mgSub.textContent = sub; mgBtn.textContent = btnText || 'ПОПРОБОВАТЬ СНОВА';
+            mgBtn.className = 'action-btn danger';
+            mgBtn.style.display = 'block';
+            mgBtn.onclick = () => { hideMinigame(); if (callback) callback(); };
+            overlayEl.style.display = 'flex';
+        }
+
+        function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function randomPosition(maxX, maxY, size) { return { x: Math.random() * (maxX - size), y: Math.random() * (maxY - size) }; }
+        function loadImage(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = 'images/' + src;
+            });
+        }
+
+        function showRosyEmotion(imageName, duration = 2500) {
+            const isSleep = game.mode === 'sleep';
+            if(isSleep) {
+                playerImg.src = 'images/' + imageName;
+                setTimeout(() => { playerImg.src = 'images/rosya_sleep.png'; }, duration);
+            } else {
+                playerImg.src = 'images/' + imageName;
+                setTimeout(() => { playerImg.src = 'images/rosya_stand.png'; }, duration);
+            }
+        }
+
+        // ================================================================
+        //  1. МИНИ-ИГРА: ЛЕСТНИЦА
+        // ================================================================
+        async function startStairsMinigame() {
+            game.currentMinigame = 'stairs';
+            showMinigame('🧦 ЛЕСТНИЦА С БЕЛЬЁМ', 'УКЛОНЯЙСЯ ОТ ПАДАЮЩИХ НОСКОВ! 30 СЕКУНД', 'НАЧАТЬ ИГРУ', async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800; canvas.height = 600;
+                canvasContainer.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+
+                const laundryImages = [];
+                for (const name of LAUNDRY_IMAGES) {
+                    const img = await loadImage(name);
+                    if (img) laundryImages.push(img);
+                }
+
+                const rosyaImg = await loadImage('rosya_stand.png');
+
+                let playerX = 350, hits = 0, timeLeft = 30;
+                let gameOver = false, animId = null;
+                let items = [];
+                const mgKeys = { left: false, right: false };
+
+                function mgKeyHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = true; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = true; e.preventDefault(); }
+                }
+                function mgKeyUpHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = false; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = false; e.preventDefault(); }
+                }
+                document.addEventListener('keydown', mgKeyHandler);
+                document.addEventListener('keyup', mgKeyUpHandler);
+
+                function spawnItem() {
+                    const img = randomItem(laundryImages);
+                    const size = 30 + Math.random() * 20;
+                    const x = Math.random() * (canvas.width - size);
+                    items.push({ x, y: -size, width: size, height: size * 1.3, speed: 1.5 + Math.random() * 3, img, rotation: Math.random() * 0.5 - 0.25 });
+                }
+
+                let spawnTimer = setInterval(() => { if (!gameOver && timeLeft > 0) spawnItem(); }, 700);
+                let timerInterval = setInterval(() => {
+                    if (!gameOver) {
+                        timeLeft--;
+                        if (timeLeft <= 0) {
+                            timeLeft = 0; gameOver = true;
+                            clearInterval(spawnTimer); clearInterval(timerInterval);
+                            document.removeEventListener('keydown', mgKeyHandler); document.removeEventListener('keyup', mgKeyUpHandler);
+                            showRosyEmotion('rosya_happy.png');
+                            showMinigameResult('🏆 ПОБЕДА!', 'РОСЯ ПРОДЕРЖАЛАСЬ 30 СЕКУНД!', 'ПРОДОЛЖИТЬ', () => { setScene('aliska_room'); });
+                            return;
+                        }
+                    }
+                }, 1000);
+
+                function update() {
+                    if (gameOver) { if (animId) cancelAnimationFrame(animId); return; }
+
+                    if (mgKeys.left) playerX = Math.max(20, playerX - 6);
+                    if (mgKeys.right) playerX = Math.min(canvas.width - 80, playerX + 6);
+
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        items[i].y += items[i].speed;
+                        if (items[i].y + items[i].height > 470 && items[i].y < 550 &&
+                            items[i].x + items[i].width > playerX && items[i].x < playerX + 60) {
+                            hits++; items.splice(i, 1);
+                            if (hits >= 3) {
+                                gameOver = true;
+                                clearInterval(spawnTimer); clearInterval(timerInterval);
+                                document.removeEventListener('keydown', mgKeyHandler); document.removeEventListener('keyup', mgKeyUpHandler);
+                                showRosyEmotion('rosya_sad.png');
+                                showMinigameFail('😨 ОЙ!', 'РОСЯ УПАЛА! ПОПРОБУЙ ЕЩЁ РАЗ!', 'ПОПРОБОВАТЬ СНОВА', () => { setScene('aliska_room'); });
+                                return;
+                            }
+                            continue;
+                        }
+                        if (items[i].y > canvas.height) items.splice(i, 1);
+                    }
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    for (const item of items) {
+                        if (item.img) {
+                            ctx.save();
+                            ctx.translate(item.x + item.width / 2, item.y + item.height / 2);
+                            ctx.rotate(item.rotation || 0);
+                            ctx.drawImage(item.img, -item.width / 2, -item.height / 2, item.width, item.height);
+                            ctx.restore();
+                        }
+                    }
+
+                    if (rosyaImg) ctx.drawImage(rosyaImg, playerX, 480, 60, 60);
+
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px "Courier New", monospace';
+                    ctx.fillText('⏱ ' + timeLeft + 'с', 10, 30);
+                    ctx.fillText('💥 ' + hits + '/3', 10, 60);
+                    animId = requestAnimationFrame(update);
+                }
+                update();
+            });
+        }
+
+        // ================================================================
+        //  2. МИНИ-ИГРА: ФАНТИКИ ПОД ДИВАНОМ
+        // ================================================================
+        async function startSofaMinigame() {
+            game.currentMinigame = 'sofa';
+            showMinigame('🛋️ ФАНТИКИ ПОД ДИВАНОМ', 'СОБЕРИ ФАНТИКИ, НО ЗАМРИ, КОГДА АЛИСКА СМОТРИТ!', 'НАЧАТЬ ИГРУ', async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800; canvas.height = 600;
+                canvasContainer.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+
+                const fantikImages = [];
+                for (const name of FANTIK_IMAGES) {
+                    const img = await loadImage(name);
+                    if (img) fantikImages.push(img);
+                }
+                const rosyaImg = await loadImage('rosya_stand.png');
+
+                const totalFantiks = 5 + Math.floor(Math.random() * 6);
+                let collected = 0, fantiks = [];
+                let gameOver = false, frozen = false, isLooking = false, moving = false;
+                let animId = null;
+                let playerX = 100, playerY = 450;
+                const mgKeys = { left: false, right: false, up: false, down: false };
+
+                for (let i = 0; i < totalFantiks; i++) {
+                    const img = randomItem(fantikImages);
+                    const size = 25 + Math.random() * 15;
+                    const pos = randomPosition(canvas.width - size, 400, size);
+                    fantiks.push({ x: pos.x, y: pos.y, width: size, height: size, img, collected: false, rotation: Math.random() * 0.5 - 0.25 });
+                }
+
+                function mgKeyHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = true; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = true; e.preventDefault(); }
+                    if (key === 'ArrowUp' || key === 'w') { mgKeys.up = true; e.preventDefault(); }
+                    if (key === 'ArrowDown' || key === 's') { mgKeys.down = true; e.preventDefault(); }
+                }
+                function mgKeyUpHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = false; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = false; e.preventDefault(); }
+                    if (key === 'ArrowUp' || key === 'w') { mgKeys.up = false; e.preventDefault(); }
+                    if (key === 'ArrowDown' || key === 's') { mgKeys.down = false; e.preventDefault(); }
+                }
+                document.addEventListener('keydown', mgKeyHandler);
+                document.addEventListener('keyup', mgKeyUpHandler);
+
+                function aliskaLook() {
+                    if (gameOver || isLooking) return;
+                    isLooking = true; frozen = true; moving = false;
+
+                    showDialog('АЛИСКА', '*ГДЕ ЖЕ НАША РОСЕНЬКА?*', 800);
+
+                    setTimeout(() => {
+                        if (!gameOver) {
+                            showDialog('АЛИСКА', '*ЗАГЛЯДЫВАЕТ ПОД ДИВАН*', 1200);
+                            setTimeout(() => {
+                                if (!gameOver) {
+                                    isLooking = false; frozen = false; hideDialog();
+                                    if (moving && !gameOver) {
+                                        gameOver = true;
+                                        document.removeEventListener('keydown', mgKeyHandler); document.removeEventListener('keyup', mgKeyUpHandler);
+                                        showRosyEmotion('rosya_sad.png');
+                                        showMinigameFail('😅 ОЙ!', 'АЛИСКА ЗАМЕТИЛА, ЧТО ТЫ ШЕВЕЛИШЬСЯ!', 'ПОПРОБОВАТЬ СНОВА', () => { setScene('aliska_room'); });
+                                    }
+                                }
+                            }, 1300);
+                        }
+                    }, 700);
+                }
+
+                let lookInterval = setInterval(() => {
+                    if (!gameOver && !isLooking && Math.random() < 0.40) aliskaLook();
+                }, 1500);
+
+                let timerInterval = setInterval(() => {
+                    if (gameOver) return;
+                    if (collected >= totalFantiks) {
+                        gameOver = true;
+                        clearInterval(lookInterval); clearInterval(timerInterval);
+                        document.removeEventListener('keydown', mgKeyHandler); document.removeEventListener('keyup', mgKeyUpHandler);
+                        showRosyEmotion('rosya_happy.png');
+                        showMinigameResult('🎉 ПОБЕДА!', 'РОСЯ СОБРАЛА ВСЕ ' + totalFantiks + ' ФАНТИКОВ!', 'ПОЗДРАВЛЯЕМ!', () => { setScene('aliska_room'); });
+                    }
+                }, 500);
+
+                function update() {
+                    if (gameOver) { if (animId) cancelAnimationFrame(animId); return; }
+
+                    let dx = 0, dy = 0;
+                    if (mgKeys.left) dx = -2.5;
+                    if (mgKeys.right) dx = 2.5;
+                    if (mgKeys.up) dy = -2.5;
+                    if (mgKeys.down) dy = 2.5;
+
+                    moving = (dx !== 0 || dy !== 0);
+
+                    if (!frozen && !gameOver) {
+                        playerX = Math.max(0, Math.min(canvas.width - 60, playerX + dx));
+                        playerY = Math.max(0, Math.min(canvas.height - 70, playerY + dy));
+
+                        for (const fantik of fantiks) {
+                            if (!fantik.collected && playerX < fantik.x + fantik.width && playerX + 60 > fantik.x &&
+                                playerY < fantik.y + fantik.height && playerY + 60 > fantik.y) {
+                                fantik.collected = true; collected++;
+                                showDialog('РОСЯ', '🍬 +1 ФАНТИК! (' + collected + '/' + totalFantiks + ')', 800);
+                                setTimeout(hideDialog, 900);
+                            }
+                        }
+                    }
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    for (const fantik of fantiks) {
+                        if (fantik.collected) continue;
+                        if (fantik.img) {
+                            ctx.save();
+                            ctx.translate(fantik.x + fantik.width / 2, fantik.y + fantik.height / 2);
+                            ctx.rotate(fantik.rotation || 0);
+                            ctx.drawImage(fantik.img, -fantik.width / 2, -fantik.height / 2, fantik.width, fantik.height);
+                            ctx.restore();
+                        }
+                    }
+
+                    if (rosyaImg) ctx.drawImage(rosyaImg, playerX, playerY, 60, 60);
+
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px "Courier New", monospace';
+                    ctx.fillText('🍬 ' + collected + '/' + totalFantiks, 10, 30);
+                    if (frozen) { ctx.fillStyle = '#ff6b6b'; ctx.fillText('❄️ ЗАМРИ! АЛИСКА СМОТРИТ!', canvas.width / 2 - 120, 30); }
+                    animId = requestAnimationFrame(update);
+                }
+                update();
+            });
+        }
+
+        // ================================================================
+        //  3. МИНИ-ИГРА: ЛЕТАЮЩИЙ ФАНТИК
+        // ================================================================
+        async function startFantikMinigame() {
+            game.currentMinigame = 'fantik';
+            showMinigame('🎀 ЛЕТАЮЩИЙ ФАНТИК', 'ПОЙМАЙ ФАНТИК ЛАПКОЙ! НУЖНО ПОЙМАТЬ 10 ШТУК ЗА 30 СЕКУНД!', 'НАЧАТЬ ИГРУ', async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800; canvas.height = 600;
+                canvasContainer.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+
+                const flyingFantikImg = await loadImage('flying_fantik.png');
+                const rosyaImg = await loadImage('rosya_stand.png');
+
+                let playerX = 350, playerY = 300, fantikX = 100, fantikY = 100;
+                let fantikVx = 3, fantikVy = 2, fantikSize = 40;
+                let catches = 0, timeLeft = 30;
+                let gameOver = false, animId = null;
+                const mgKeys = { left: false, right: false, up: false, down: false };
+
+                function mgKeyHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = true; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = true; e.preventDefault(); }
+                    if (key === 'ArrowUp' || key === 'w') { mgKeys.up = true; e.preventDefault(); }
+                    if (key === 'ArrowDown' || key === 's') { mgKeys.down = true; e.preventDefault(); }
+                }
+                function mgKeyUpHandler(e) {
+                    const key = e.key;
+                    if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = false; e.preventDefault(); }
+                    if (key === 'ArrowRight' || key === 'd') { mgKeys.right = false; e.preventDefault(); }
+                    if (key === 'ArrowUp' || key === 'w') { mgKeys.up = false; e.preventDefault(); }
+                    if (key === 'ArrowDown' || key === 's') { mgKeys.down = false; e.preventDefault(); }
+                }
+                document.addEventListener('keydown', mgKeyHandler);
+                document.addEventListener('keyup', mgKeyUpHandler);
+
+                function randomDirection() {
+                    fantikVx = (Math.random() - 0.5) * 6; fantikVy = (Math.random() - 0.5) * 6;
+                    if (Math.abs(fantikVx) < 1) fantikVx = 2 * (Math.random() > 0.5 ? 1 : -1);
+                    if (Math.abs(fantikVy) < 1) fantikVy = 2 * (Math.random() > 0.5 ? 1 : -1);
+                }
+                let directionTimer = setInterval(() => { if (!gameOver) randomDirection(); }, 1500);
+                let timerInterval = setInterval(() => {
+                    if (!gameOver) {
+                        timeLeft--;
+                        if (timeLeft <= 0) {
+                            timeLeft = 0; gameOver = true;
+                            clearInterval(directionTimer); clearInterval(timerInterval);
+                            document.removeEventListener('keydown', mgKeyHandler); document.removeEventListener('keyup', mgKeyUpHandler);
+                            if (catches >= 10) {
+                                showRosyEmotion('rosya_happy.png');
+                                showMinigameResult('🎉 ПОБЕДА!', 'РОСЯ ПОЙМАЛА ' + catches + ' ФАНТИКОВ!', 'ПОЗДРАВЛЯЕМ!', () => { setScene('alenka_room'); });
+                            } else {
+                                showRosyEmotion('rosya_sad.png');
+                                showMinigameFail('😔 НЕ УДАЛОСЬ', 'ФАНТИК УЛЕТЕЛ К ШИНШИЛЛЕ!\n"НЕ ОТДАМ!" - ГОВОРИТ ШУШЕК', 'ПОПРОБОВАТЬ СНОВА', () => { setScene('alenka_room'); });
+                            }
+                        }
+                    }
+                }, 1000);
+
+                function update() {
+                    if (gameOver) { if (animId) cancelAnimationFrame(animId); return; }
+
+                    let dx = 0, dy = 0;
+                    if (mgKeys.left) dx = -4;
+                    if (mgKeys.right) dx = 4;
+                    if (mgKeys.up) dy = -4;
+                    if (mgKeys.down) dy = 4;
+                    playerX = Math.max(0, Math.min(canvas.width - 60, playerX + dx));
+                    playerY = Math.max(0, Math.min(canvas.height - 60, playerY + dy));
+
+                    fantikX += fantikVx; fantikY += fantikVy;
+                    if (fantikX < 0 || fantikX > canvas.width - fantikSize) fantikVx = -fantikVx;
+                    if (fantikY < 0 || fantikY > canvas.height - fantikSize) fantikVy = -fantikVy;
+
+                    if (playerX < fantikX + fantikSize && playerX + 60 > fantikX &&
+                        playerY < fantikY + fantikSize && playerY + 60 > fantikY) {
+                        catches++;
+                        fantikX = Math.random() * (canvas.width - fantikSize);
+                        fantikY = Math.random() * (canvas.height - fantikSize);
+                        randomDirection();
+                        showDialog('РОСЯ', '🎯 ПОЙМАЛА! (' + catches + '/10)', 600);
+                        setTimeout(hideDialog, 700);
+                    }
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    if (flyingFantikImg) ctx.drawImage(flyingFantikImg, fantikX, fantikY, fantikSize, fantikSize);
+
+                    if (rosyaImg) ctx.drawImage(rosyaImg, playerX, playerY, 60, 60);
+
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px "Courier New", monospace';
+                    ctx.fillText('⏱ ' + timeLeft + 'с', 10, 30);
+                    ctx.fillText('🎯 ' + catches + '/10', 10, 60);
+                    animId = requestAnimationFrame(update);
+                }
+                update();
+            });
+        }
+
+        // ================================================================
+//  4. МИНИ-ИГРА: ШИНШИЛЛА (Шушик злится чаще, но процент растет медленно)
+// ================================================================
+function startShushekMinigame() {
+    game.currentMinigame = 'shushek';
+    showMinigame('🐹 ШИНШИЛЛА', 'ПОДРУЖИСЬ С ШУШЕКОМ! НЕ ПУГАЙ ЕГО, КОГДА ОН ВОРЧИТ!', 'НАЧАТЬ ИГРУ', async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800; canvas.height = 600;
+        canvasContainer.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        const rosyaImg = await loadImage('rosya_stand.png');
+        const shushekImg = await loadImage('shushek.png');
+        const shushekAngryImg = await loadImage('shushek_angry.png');
+
+        let playerX = 100, playerY = 300, shushekX = 500, shushekY = 300;
+        let anger = 0, gameOver = false, isNear = false, isMoving = false, animId = null;
+        let currentShushekImg = shushekImg;
+        const mgKeys = { left: false, right: false };
+        let soundWaves = [];
+        let angryTimer = null; // Таймер злости
+        let calmTimer = null; // Таймер успокоения
+
+        function mgKeyHandler(e) {
+            const key = e.key;
+            if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = true; e.preventDefault(); }
+            if (key === 'ArrowRight' || key === 'd') { mgKeys.right = true; e.preventDefault(); }
+        }
+        function mgKeyUpHandler(e) {
+            const key = e.key;
+            if (key === 'ArrowLeft' || key === 'a') { mgKeys.left = false; e.preventDefault(); }
+            if (key === 'ArrowRight' || key === 'd') { mgKeys.right = false; e.preventDefault(); }
+        }
+        document.addEventListener('keydown', mgKeyHandler);
+        document.addEventListener('keyup', mgKeyUpHandler);
+
+        // Шушик злится очень часто (каждые 0.5 сек, шанс 70%)
+        function startAngerTimer() {
+            if (angryTimer) clearInterval(angryTimer);
+            angryTimer = setInterval(() => {
+                if (gameOver) return;
+                if (isNear && isMoving && Math.random() < 0.85) {
+                    // Медленно увеличиваем злость
+                    anger += 10 + Math.random() * 5;
+                    currentShushekImg = shushekAngryImg;
+
+                    // Звуковые волны
+                    for (let i = 0; i < 6; i++) {
+                        soundWaves.push({
+                            x: shushekX + 80,
+                            y: shushekY + 40,
+                            radius: 10 + i * 12,
+                            alpha: 0.8,
+                            speed: 2.5
+                        });
+                    }
+
+                    showDialog('ШУШЕК', '*ВОРЧИТ* ХР-ХР-ХР...', 700);
+                    setTimeout(() => {
+                        currentShushekImg = shushekImg;
+                        hideDialog();
+                    }, 900);
+
+                    if (anger >= 100) {
+                        gameOver = true;
+                        clearInterval(angryTimer);
+                        clearInterval(calmTimer);
+                        document.removeEventListener('keydown', mgKeyHandler);
+                        document.removeEventListener('keyup', mgKeyUpHandler);
+                        showRosyEmotion('rosya_sad.png');
+                        showMinigameFail('😤 ОЙ!', 'ШУШЕК РАЗОЗЛИЛСЯ И УБЕЖАЛ!', 'ПОПРОБОВАТЬ СНОВА', () => {
+                            setScene('alenka_room');
+                        });
+                    }
+                }
+            }, 500); // Каждые 0.5 секунды
+        }
+
+        // Когда Рося стоит на месте - успокаивается
+        function startCalmTimer() {
+            if (calmTimer) clearInterval(calmTimer);
+            calmTimer = setInterval(() => {
+                if (gameOver) return;
+                if (!isMoving && anger > 0) {
+                    anger = Math.max(0, anger - 0.5); // Медленно спадает
+                }
+                if (!isNear && anger > 0) {
+                    anger = Math.max(0, anger - 1); // Быстрее спадает если далеко
+                }
+            }, 200); // Каждые 200мс
+        }
+
+        startAngerTimer();
+        startCalmTimer();
+
+        function update() {
+            if (gameOver) {
+                if (animId) cancelAnimationFrame(animId);
+                return;
+            }
+
+            let dx = 0;
+            if (mgKeys.left) dx = -1.2; // Медленнее (было 2)
+            if (mgKeys.right) dx = 1.2; // Медленнее
+            playerX = Math.max(0, Math.min(canvas.width - 60, playerX + dx));
+
+            isMoving = (dx !== 0);
+            const dist = Math.hypot(playerX - shushekX, playerY - shushekY);
+            isNear = dist < 200;
+
+            // Если Рося стоит на месте и близко, Шушик НЕ успокаивается полностью
+            // но и не злится так быстро
+            if (!isMoving && isNear && anger > 0) {
+                // Очень медленное успокоение когда рядом и не двигается
+                anger = Math.max(0, anger - 0.2);
+            }
+
+            // Победа - нужно подойти очень близко когда злость низкая
+            if (isNear && anger < 15 && dist < 35) {
+                gameOver = true;
+                clearInterval(angryTimer);
+                clearInterval(calmTimer);
+                document.removeEventListener('keydown', mgKeyHandler);
+                document.removeEventListener('keyup', mgKeyUpHandler);
+                showRosyEmotion('rosya_happy.png');
+                showMinigameResult('🤝 ДРУЖБА!', 'РОСЯ ТИХО ПОДОШЛА И ПОДРУЖИЛАСЬ С ШУШЕКОМ!', 'ПОЗДРАВЛЯЕМ!', () => {
+                    setScene('alenka_room');
+                });
+                return;
+            }
+
+            // Обновление звуковых волн
+            for (let i = soundWaves.length - 1; i >= 0; i--) {
+                soundWaves[i].radius += soundWaves[i].speed;
+                soundWaves[i].alpha -= 0.025;
+                if (soundWaves[i].alpha <= 0) soundWaves.splice(i, 1);
+            }
+
+            // Отрисовка
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Звуковые волны
+            for (const wave of soundWaves) {
+                ctx.beginPath();
+                ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 200, 100, ${wave.alpha})`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(wave.x, wave.y, wave.radius + 5, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 150, 50, ${wave.alpha * 0.7})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(wave.x, wave.y, wave.radius - 3, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 150, ${wave.alpha * 0.5})`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // Шушек большой
+            if (currentShushekImg) {
+                ctx.drawImage(currentShushekImg, shushekX + 30, shushekY - 40, 90, 90);
+            }
+
+            // Рося
+            if (rosyaImg) {
+                ctx.save();
+                ctx.translate(playerX + 30, playerY + 30);
+                ctx.scale(-1, 1); // Смотрит на Шушека
+                ctx.drawImage(rosyaImg, -30, -30, 60, 60);
+                ctx.restore();
+            }
+
+            // Индикатор злости
+            ctx.fillStyle = '#222222';
+            ctx.fillRect(10, 10, 250, 30);
+
+            // Градиент цвета от зеленого к красному
+            let angerColor;
+            if (anger > 80) angerColor = '#ff3333';
+            else if (anger > 60) angerColor = '#ff7733';
+            else if (anger > 40) angerColor = '#ffaa33';
+            else if (anger > 20) angerColor = '#ffdd33';
+            else angerColor = '#44ff44';
+
+            ctx.fillStyle = angerColor;
+            ctx.fillRect(12, 12, Math.min(246, anger * 2.46), 26);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px "Courier New", monospace';
+            ctx.fillText('НЕДОВОЛЬСТВО: ' + Math.round(anger) + '%', 10, 60);
+
+            // Подсказка
+            if (isNear) {
+                ctx.fillStyle = isMoving ? '#ffaa44' : '#44ff44';
+                ctx.font = 'bold 14px "Courier New", monospace';
+                ctx.fillText(isMoving ? '⚠️ ШУШЕК НАСТОРОЖЕН!' : '😊 ШУШЕК УСПОКАИВАЕТСЯ...', 10, 85);
+            }
+
+            animId = requestAnimationFrame(update);
+        }
+        update();
+    });
+}
+
+
+
+// ================================================================
+//  5. МИНИ-ИГРА: ШКАФ (90 ячеек, 2 секунды, мало безопасных мест)
+// ================================================================
+async function startClosetMinigame() {
+    game.currentMinigame = 'closet';
+    showMinigame('🚪 ШКАФ', 'ЗАПОМНИ БЕЗОПАСНЫЕ МЕСТА (3 РАУНДА) И НАЖМИ НА НИХ!', 'НАЧАТЬ ИГРУ', async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1100;
+        canvas.height = 750;
+        canvasContainer.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        const dangerImages = [];
+        for (let i = 1; i <= 4; i++) {
+            const img = await loadImage('closet_unsafe_' + i + '.png');
+            if (img) dangerImages.push(img);
+        }
+        if (dangerImages.length === 0) {
+            for (const name of CLOSET_DANGER_IMAGES) {
+                const img = await loadImage(name);
+                if (img) dangerImages.push(img);
+            }
+        }
+
+        const rounds = 10;
+        let currentRound = 0;
+        let score = 0;
+        let gameOver = false;
+        let phase = 'show';
+        let grid = [];
+        let animId = null;
+        let roundTimeLeft = 1;
+
+        function generateGrid() {
+            grid = [];
+            const rows = 9;
+            const cols = 10;
+            const totalCells = rows * cols; // 90 ячеек
+            const numSafe = 3 + Math.floor(Math.random() * 5); // Всего 3-7 безопасных мест!
+            const numUnsafe = totalCells - numSafe; // 83-87 опасных мест
+
+            const indices = Array.from({ length: totalCells }, (_, i) => i);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            const safeIndices = indices.slice(0, numSafe); // Первые numSafe - безопасные
+
+            for (let i = 0; i < totalCells; i++) {
+                const row = Math.floor(i / cols);
+                const col = i % cols;
+                const isSafe = safeIndices.includes(i);
+                const img = isSafe ? null : randomItem(dangerImages); // Опасные с картинками
+                grid.push({
+                    row, col,
+                    isUnsafe: !isSafe,
+                    img,
+                    revealed: false,
+                    x: 15 + col * 107,
+                    y: 50 + row * 72,
+                    width: 100,
+                    height: 62
+                });
+            }
+        }
+
+        function drawGrid() {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px "Courier New", monospace';
+    ctx.fillText('РАУНД ' + (currentRound + 1) + ' / ' + rounds, 20, 30);
+
+    if (phase === 'show') {
+        ctx.fillText('⏱ ЗАПОМНИ: ' + roundTimeLeft + 'с', canvas.width - 280, 30);
+        const safeCount = grid.filter(c => !c.isUnsafe).length;
+        ctx.fillText('🟢 БЕЗОПАСНЫХ: ' + safeCount, canvas.width - 280, 55);
+    } else {
+        ctx.fillText('🎯 ВЫБЕРИ БЕЗОПАСНОЕ МЕСТО!', canvas.width - 320, 30);
+    }
+
+    for (const cell of grid) {
+        ctx.strokeStyle = '#444444';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cell.x, cell.y, cell.width, cell.height);
+
+        if (cell.revealed) {
+            if (cell.isUnsafe && cell.img) {
+                // Опасное место с предметом - красноватый фон
+                ctx.fillStyle = '#1a0000';
+                ctx.fillRect(cell.x + 1, cell.y + 1, cell.width - 2, cell.height - 2);
+                ctx.drawImage(cell.img, cell.x + 28, cell.y + 4, 44, 54);
+            } else {
+                // Безопасное место - просто темный фон, пустое
+                ctx.fillStyle = '#1a0000';
+                ctx.fillRect(cell.x + 1, cell.y + 1, cell.width - 2, cell.height - 2);
+            }
+        } else {
+            // Скрытая ячейка
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(cell.x + 1, cell.y + 1, cell.width - 2, cell.height - 2);
+            ctx.fillStyle = '#666666';
+            ctx.font = 'bold 16px "Courier New", monospace';
+            ctx.fillText('?', cell.x + 42, cell.y + 38);
+        }
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px "Courier New", monospace';
+    ctx.fillText('ПРАВИЛЬНО: ' + score + ' / ' + rounds, 20, canvas.height - 15);
+}
+
+        function startRound() {
+            if (currentRound >= rounds) {
+                gameOver = true;
+                if (score >= rounds) {
+                    showRosyEmotion('rosya_happy.png');
+                    showMinigameResult('🏆 ПОБЕДА!', 'РОСЯ НАШЛА ВСЕ БЕЗОПАСНЫЕ МЕСТА!', 'ПОЗДРАВЛЯЕМ!', () => { setScene('alenka_room'); });
+                } else {
+                    showRosyEmotion('rosya_sad.png');
+                    showMinigameFail('😅 НЕ УДАЛОСЬ', 'АЛЁНКА ДОСТАЛА РОСЮ ИЗ ШКАФА!', 'ПОПРОБОВАТЬ СНОВА', () => { setScene('alenka_room'); });
+                }
+                return;
+            }
+
+            generateGrid();
+            phase = 'show';
+            roundTimeLeft = 1;
+
+            for (const cell of grid) cell.revealed = true;
+            drawGrid();
+
+            let countdown = setInterval(() => {
+                if (phase !== 'show' || gameOver) {
+                    clearInterval(countdown);
+                    return;
+                }
+                roundTimeLeft--;
+                drawGrid();
+                if (roundTimeLeft <= 0) {
+                    clearInterval(countdown);
+                    for (const cell of grid) cell.revealed = false;
+                    phase = 'click';
+                    drawGrid();
+                }
+            }, 1000);
+        }
+
+        function handleCanvasClick(e) {
+            if (phase !== 'click' || gameOver) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            for (const cell of grid) {
+                if (mouseX >= cell.x && mouseX <= cell.x + cell.width &&
+                    mouseY >= cell.y && mouseY <= cell.y + cell.height) {
+
+                    for (const c of grid) c.revealed = true;
+                    drawGrid();
+
+                    if (cell.isUnsafe) {
+                        currentRound++;
+                        phase = 'show';
+                        showDialog('АЛЁНКА', '❌ РОСЯ! ТУДА НЕЛЬЗЯ!', 1500);
+                        setTimeout(() => {
+                            hideDialog();
+                            startRound();
+                        }, 1600);
+                    } else {
+                        score++;
+                        currentRound++;
+                        phase = 'show';
+                        showDialog('РОСЯ', '✅ БЕЗОПАСНО! МОЖНО СИДЕТЬ!', 1000);
+                        setTimeout(() => {
+                            hideDialog();
+                            startRound();
+                        }, 1100);
+                    }
+                    return;
+                }
+            }
+        }
+
+        canvas.addEventListener('click', handleCanvasClick);
+        startRound();
+
+        function update() {
+            if (gameOver) {
+                if (animId) cancelAnimationFrame(animId);
+                return;
+            }
+            drawGrid();
+            animId = requestAnimationFrame(update);
+        }
+        update();
+    });
+}
+
+ // ================================================================
+//  6. МИНИ-ИГРА: ПОБЕГ ОТ МИШИ (картинки не сплющены)
+// ================================================================
+async function startMishaMinigame() {
+    game.currentMinigame = 'misha';
+    showMinigame('🏃 ПОБЕГ ОТ МИШИ', 'ПРЫГАЙ ЧЕРЕЗ ПРЕПЯТСТВИЯ! ПРОБЕЛ/W ДЛЯ ПРЫЖКА!', 'НАЧАТЬ ИГРУ', async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 400;
+        canvasContainer.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        // Загружаем изображения и ЖДЁМ полной загрузки
+        const obstacleImages = [];
+        for (const name of OBSTACLE_IMAGES) {
+            const img = await loadImage(name);
+            if (img && img.width > 0 && img.height > 0) {
+                obstacleImages.push({
+                    img: img,
+                    w: img.naturalWidth || img.width,  // Используем naturalWidth
+                    h: img.naturalHeight || img.height // Используем naturalHeight
+                });
+            }
+        }
+
+        const rosyaImg = await loadImage('rosya_stand.png');
+
+        // Ждём загрузки Роси
+        let rosyaW = 60;
+        let rosyaH = 60;
+        if (rosyaImg) {
+            // Даём время на загрузку если нужно
+            if (rosyaImg.complete) {
+                rosyaW = rosyaImg.naturalWidth || rosyaImg.width || 60;
+                rosyaH = rosyaImg.naturalHeight || rosyaImg.height || 60;
+            } else {
+                await new Promise((resolve) => {
+                    rosyaImg.onload = () => {
+                        rosyaW = rosyaImg.naturalWidth || rosyaImg.width || 60;
+                        rosyaH = rosyaImg.naturalHeight || rosyaImg.height || 60;
+                        resolve();
+                    };
+                });
+            }
+        }
+
+        // Рося стоит на месте слева
+        const rosyaX = 80;
+        const groundY = 300;
+        let rosyaY = groundY;
+        let velocityY = 0;
+        let isJumping = false;
+        const gravity = 0.8;
+        const jumpForce = -13;
+
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+        let speed = 6;
+        let animId = null;
+        let spawnTimerId = null;
+
+        const MIN_DISTANCE = 250;
+
+        function mgKeyHandler(e) {
+            const key = e.key;
+            if (key === ' ' || key === 'w' || key === 'ArrowUp') {
+                e.preventDefault();
+                if (!isJumping && !gameOver) {
+                    velocityY = jumpForce;
+                    isJumping = true;
+                }
+            }
+        }
+        document.addEventListener('keydown', mgKeyHandler);
+
+        function spawnObstacle() {
+            if (obstacleImages.length === 0) return;
+
+            const item = randomItem(obstacleImages);
+
+            // ФИКСИРОВАННАЯ ВЫСОТА, ширина по пропорциям
+            const drawHeight = 60;
+            const drawWidth = (item.w / item.h) * drawHeight;
+
+            const newObstacle = {
+                x: canvas.width + 50,
+                y: groundY - drawHeight + 60,
+                width: drawWidth,
+                height: drawHeight,
+                img: item.img
+            };
+
+            // Проверяем дистанцию
+            if (obstacles.length > 0) {
+                const lastObstacle = obstacles[obstacles.length - 1];
+                const distanceToLast = newObstacle.x - (lastObstacle.x + lastObstacle.width);
+
+                if (distanceToLast < MIN_DISTANCE) {
+                    newObstacle.x = lastObstacle.x + lastObstacle.width + MIN_DISTANCE + Math.random() * 150;
+                }
+            }
+
+            obstacles.push(newObstacle);
+        }
+
+        function scheduleNextSpawn() {
+            if (gameOver) return;
+
+            const minDelay = 1000;
+            const maxDelay = 3000;
+            const delay = minDelay + Math.random() * (maxDelay - minDelay);
+            const doubleSpawn = Math.random() < 0.15;
+
+            spawnTimerId = setTimeout(() => {
+                if (!gameOver) {
+                    spawnObstacle();
+
+                    if (doubleSpawn && obstacles.length > 0) {
+                        setTimeout(() => {
+                            if (!gameOver) {
+                                spawnObstacle();
+                            }
+                        }, 500 + Math.random() * 300);
+                    }
+
+                    if (speed < 12) speed += 0.15;
+                    scheduleNextSpawn();
+                }
+            }, delay);
+        }
+
+        scheduleNextSpawn();
+
+        function update() {
+            if (gameOver) {
+                if (animId) cancelAnimationFrame(animId);
+                if (spawnTimerId) clearTimeout(spawnTimerId);
+                return;
+            }
+
+            if (isJumping) {
+                rosyaY += velocityY;
+                velocityY += gravity;
+                if (rosyaY >= groundY) {
+                    rosyaY = groundY;
+                    isJumping = false;
+                    velocityY = 0;
+                }
+            }
+
+            // Правильные пропорции Роси
+            const rosyaDrawHeight = 70;
+            const rosyaDrawWidth = (rosyaW / rosyaH) * rosyaDrawHeight;
+
+            const rosyaHitWidth = rosyaDrawWidth * 0.6;
+            const rosyaHitHeight = rosyaDrawHeight * 0.7;
+            const rosyaHitX = rosyaX + (rosyaDrawWidth - rosyaHitWidth) / 2;
+            const rosyaHitY = rosyaY + (rosyaDrawHeight - rosyaHitHeight);
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= speed;
+
+                if (obstacles[i].x < rosyaHitX + rosyaHitWidth &&
+                    obstacles[i].x + obstacles[i].width * 0.8 > rosyaHitX &&
+                    rosyaHitY < obstacles[i].y + obstacles[i].height &&
+                    rosyaHitY + rosyaHitHeight > obstacles[i].y) {
+
+                    gameOver = true;
+                    if (spawnTimerId) clearTimeout(spawnTimerId);
+                    document.removeEventListener('keydown', mgKeyHandler);
+
+                    showRosyEmotion('rosya_sad.png');
+                    showMinigameFail('🤗 МИША ПОГЛАДИЛ!', 'МИША ПОГЛАДИЛ РОСЮ И ОТПУСТИЛ ОБРАТНО В ХОЛЛ.\nСЧЁТ: ' + Math.floor(score), 'ВЕРНУТЬСЯ В ХОЛЛ', () => {
+                        setScene('hall');
+                        game.mishaTriggered = true;
+                        game.mishaArrived = true;
+                        spriteMap.misha.style.display = 'block';
+                        showEscapeButton();
+                    });
+                    return;
+                }
+
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                }
+            }
+
+            if (score >= 200) {
+                gameOver = true;
+                if (spawnTimerId) clearTimeout(spawnTimerId);
+                document.removeEventListener('keydown', mgKeyHandler);
+                hideMinigame();
+                setScene('sleep');
+                playerImg.src = 'images/rosya_lying.png';
+                showDialog('РОСЯ', 'МУР-МУР... Я СТОЛЬКО ВСЕГО ПЕРЕЖИЛА СЕГОДНЯ! Я ТАКАЯ УМНИЧКА!', 4500);
+                return;
+            }
+
+            // Отрисовка
+            ctx.fillStyle = '#d0d0d0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#a0a0a0';
+            ctx.fillRect(0, groundY + 60, canvas.width, 40);
+            ctx.fillStyle = '#909090';
+            ctx.fillRect(0, groundY + 55, canvas.width, 5);
+
+            // Препятствия рисуем с сохранёнными пропорциями
+            for (const obs of obstacles) {
+                if (obs.img) {
+                    ctx.drawImage(obs.img, obs.x, obs.y, obs.width, obs.height);
+                }
+            }
+
+            // Рося
+            if (rosyaImg) {
+                ctx.save();
+                ctx.translate(rosyaX + rosyaDrawWidth, rosyaY);
+                ctx.scale(-1, 1);
+                ctx.drawImage(rosyaImg, 0, 0, rosyaDrawWidth, rosyaDrawHeight);
+                ctx.restore();
+            }
+
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 24px "Courier New", monospace';
+            ctx.fillText('СЧЁТ: ' + Math.floor(score), 20, 35);
+            ctx.fillText('ЦЕЛЬ: 200', 20, 65);
+            ctx.fillText('СКОРОСТЬ: ' + speed.toFixed(1), 20, 95);
+
+            animId = requestAnimationFrame(update);
+        }
+        update();
+    });
+}
+
+        // ================================================================
+        //  ОБРАБОТЧИК ДЕЙСТВИЙ
+        // ================================================================
+        function executeAction(action) {
+            if (game.minigameActive) return;
+
+            switch (action) {
+                case 'go_corridor': setScene('corridor'); showDialog('РОСЯ', 'ПОЙДУ В КОРИДОР...', 1200); break;
+                case 'aliska_door':
+                    if (game.aliskaDoorOpen) { setScene('aliska_room'); showDialog('РОСЯ', 'Я В КОМНАТЕ АЛИСКИ!', 1200); }
+                    else if (game.doorStep === 0) { game.doorStep = 1; showDialog('РОСЯ', 'МЯУ! МЯУ! НИКТО НЕ ОТВЕЧАЕТ...', 1500); }
+                    else if (game.doorStep === 1) {
+                        game.doorStep = 2; showDialog('РОСЯ', '*СКРЕБЁТСЯ В ДВЕРЬ*', 1200);
+                        setTimeout(() => { game.aliskaDoorOpen = true; showDialog('АЛИСКА', 'ОЙ, РОСЯ! ЗАХОДИ!', 1500); setTimeout(() => { setScene('aliska_room'); showDialog('РОСЯ', 'УРА! Я В КОМНАТЕ АЛИСКИ!', 1200); }, 1600); }, 1300);
+                    }
+                    break;
+                case 'alenka_door':
+                    if (game.alenkaDoorOpen) { setScene('alenka_room'); showDialog('РОСЯ', 'Я В КОМНАТЕ АЛЁНКИ!', 1200); }
+                    else if (game.doorStep === 0) { game.doorStep = 1; showDialog('РОСЯ', 'МЯУ! МЯУ! НИКТО НЕ ОТВЕЧАЕТ...', 1500); }
+                    else if (game.doorStep === 1) {
+                        game.doorStep = 2; showDialog('РОСЯ', '*СКРЕБЁТСЯ В ДВЕРЬ*', 1200);
+                        setTimeout(() => { game.alenkaDoorOpen = true; showDialog('АЛЁНКА', 'РОСЯ! ЗАХОДИ, МОЯ ХОРОШАЯ!', 1500); setTimeout(() => { setScene('alenka_room'); showDialog('РОСЯ', 'УРА! Я В КОМНАТЕ АЛЁНКИ!', 1200); }, 1600); }, 1300);
+                    }
+                    break;
+                case 'go_hall':
+                    if (game.alenkaVisited || game.aliskaVisited) { setScene('hall'); showDialog('РОСЯ', 'Я В ПРИХОЖЕЙ...', 1200); }
+                    else { showDialog('РОСЯ', 'ТАМ НИЧЕГО НЕТ, ПОЙДУ ПОЗЖЕ.', 1200); }
+                    break;
+                case 'shushek_minigame': startShushekMinigame(); break;
+                case 'fantik_minigame': startFantikMinigame(); break;
+                case 'closet_minigame': startClosetMinigame(); break;
+                case 'sofa_minigame': startSofaMinigame(); break;
+                case 'stairs_minigame': startStairsMinigame(); break;
+
+                case 'alenka_pet':
+                    showDialog('АЛЁНКА', 'ХОРОШАЯ МОЯ РОСЯ! *ГЛАДИТ РОСЮ*', 2000);
+                    setTimeout(() => {
+                        showRosyEmotion('rosya_happy.png');
+                        showDialog('РОСЯ', 'МУР-МУР... КАК ПРИЯТНО! 🥰', 1500);
+                    }, 2100);
+                    break;
+                case 'aliska_pet':
+                    showDialog('АЛИСКА', 'РОСЕНЬКА! КАКАЯ ТЫ МЯГКАЯ! *ГЛАДИТ РОСЮ*', 2000);
+                    setTimeout(() => {
+                        showRosyEmotion('rosya_happy.png');
+                        showDialog('РОСЯ', 'МУР-МУР... Я ТАК РАДА! 🥰', 1500);
+                    }, 2100);
+                    break;
+
+                case 'exit_alenka': game.alenkaVisited = true; setScene('corridor'); showDialog('РОСЯ', 'ПОЙДУ В КОРИДОР.', 1200); break;
+                case 'exit_aliska': game.aliskaVisited = true; setScene('corridor'); showDialog('РОСЯ', 'ПОЙДУ В КОРИДОР.', 1200); break;
+                case 'flower': showDialog('РОСЯ', 'КАКОЙ КРАСИВЫЙ ЦВЕТОК...', 1200); break;
+                case 'toy':
+                    if (!game.toyShaken) {
+                        game.toyShaken = true;
+                        showDialog('РОСЯ', '*ТЫКАЕТ ЛАПОЙ В ИГРУШКУ* ШУР-ШУР-ШУР!', 1800);
+                        setTimeout(() => {
+                            showDialog('???', 'СТУК В ДВЕРЬ!', 1000);
+                            setTimeout(() => {
+                                game.mishaTriggered = true; game.mishaArrived = true;
+                                spriteMap.misha.style.display = 'block';
+                                showRosyEmotion('rosya_sad.png');
+                                showDialog('МИША', 'ВСЕМ ПРИВЕТ! А ГДЕ РОСЯ?', 1500);
+                                setTimeout(() => {
+                                    showDialog('РОСЯ', 'ОЙ! МИША ПРИШЁЛ! НАДО БЕЖАТЬ НА КУХНЮ!', 2000);
+                                    showEscapeButton();
+                                }, 1600);
+                            }, 1100);
+                        }, 1900);
+                    } else showDialog('РОСЯ', '*СНОВА ТЫКАЕТ* ШУР-ШУР!', 1200);
+                    break;
+                case 'shushek_auto':
+                    if (!game.alenkaWarnedShushek) { game.alenkaWarnedShushek = true; showDialog('АЛЁНКА', 'РОСЯ, ОТСТАНЬ ОТ ШУШИКА! ОН ИСПУГАЕТСЯ!', 2000); }
+                    break;
+                case 'closet_auto':
+                    if (!game.alenkaWarnedCloset) { game.alenkaWarnedCloset = true; showDialog('АЛЁНКА', 'РОСЯ! ТЕБЕ ТУДА НЕЛЬЗЯ!', 1800); }
+                    break;
+                case 'stairs_auto':
+                    if (!game.aliskaWarnedStairs) { game.aliskaWarnedStairs = true; showDialog('АЛИСКА', 'РОСЯ, ОСТОРОЖНО! НЕ УПАДИ!', 1800); setTimeout(() => showDialog('РОСЯ', 'Я ОСТОРОЖНО...', 1200), 1900); }
+                    break;
+                case 'flower_auto':
+                    if (!game.aliskaWarnedFlower) { game.aliskaWarnedFlower = true; showDialog('АЛИСКА', 'РОСЯ, НЕ ТРОГАЙ ЦВЕТОК! ОН ЯДОВИТЫЙ!', 2000); setTimeout(() => showDialog('РОСЯ', 'ОЙ! Я НЕ ЗНАЛА...', 1200), 2100); }
+                    break;
+                default: showDialog('РОСЯ', 'НИЧЕГО НЕ ПРОИЗОШЛО.', 1000);
+            }
+        }
+
+        function handleInteract() {
+            if (game.dialogActive || game.minigameActive) return;
+            const scene = scenes[game.mode];
+            if (!scene) return;
+
+            if (game.mode === 'sleep') {
+                game.mode = 'stand'; playerImg.src = 'images/rosya_stand.png'; playerEl.classList.remove('sleep-mode');
+                showDialog('РОСЯ', 'МЯУ! Я ПРОСНУЛАСЬ!', 1500); setTimeout(() => setScene('stand'), 1600); return;
+            }
+
+            const px = game.rosyX; const py = game.rosyY;
+            for (const zone of (scene.zones || [])) {
+                if (Math.hypot(px - zone.x, py - zone.y) < 12) { executeAction(zone.action); return; }
+            }
+            showDialog('РОСЯ', 'ЗДЕСЬ НЕЧЕГО ДЕЛАТЬ.', 1200);
+        }
+
+        function showEscapeButton() {
+            actionsEl.innerHTML = '';
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = '🏃 УБЕЖАТЬ ОТ МИШИ!';
+            btn.style.fontSize = '18px';
+            btn.style.padding = '10px 20px';
+            btn.onclick = () => { startMishaMinigame(); };
+            actionsEl.appendChild(btn);
+            game.dialogActive = false;
+        }
+
+        // ================================================================
+        //  ДВИЖЕНИЕ И ЦИКЛ
+        // ================================================================
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'f') { e.preventDefault(); handleInteract(); return; }
+            if (['w', 'a', 's', 'd'].includes(key)) { e.preventDefault(); keys[key] = true; }
+        });
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (['w', 'a', 's', 'd'].includes(key)) { keys[key] = false; }
+        });
+
+        function gameLoop() {
+            const scene = scenes[game.mode];
+            if (!scene || !scene.movable || game.dialogActive || game.minigameActive) { requestAnimationFrame(gameLoop); return; }
+
+            let dx = 0, dy = 0, moved = false;
+            if (keys.w) { dy -= 0.5; moved = true; }
+            if (keys.s) { dy += 0.5; moved = true; }
+            if (keys.a) { dx -= 0.5; game.facing = 'left'; moved = true; }
+            if (keys.d) { dx += 0.5; game.facing = 'right'; moved = true; }
+
+            if (moved) {
+                if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+                game.rosyX = Math.max(2, Math.min(98, game.rosyX + dx));
+                game.rosyY = Math.max(2, Math.min(98, game.rosyY + dy));
+                playerImg.src = 'images/rosya_stand.png'; updatePlayer();
+
+                if (scene.autoZones) {
+                    for (const zone of scene.autoZones) {
+                        if (Math.hypot(game.rosyX - zone.x, game.rosyY - zone.y) < zone.range) { executeAction(zone.action); break; }
+                    }
+                }
+            }
+
+            let near = false, label = '';
+            for (const zone of (scene.zones || [])) {
+                if (Math.hypot(game.rosyX - zone.x, game.rosyY - zone.y) < 12) { near = true; label = zone.label; break; }
+            }
+            showInteract(near && !game.dialogActive, label);
+            requestAnimationFrame(gameLoop);
+        }
+
+        setScene('sleep');
+        gameLoop();
+        window.addEventListener('resize', updatePlayer);
+    </script>
+</body>
+</html>
